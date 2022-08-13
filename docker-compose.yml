@@ -1,0 +1,34 @@
+version: "3.9"
+services:
+  web:
+    container_name: sh_django_d
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/code
+    depends_on:
+        - sh_redis_d
+        - sh_celery_worker_d
+    command: python manage.py runserver 0.0.0.0:8000
+    links:
+      - redis:redis
+  redis:
+    image: "redis:alpine"
+    container_name: sh_redis_d
+    command: redis-server
+    expose:
+      - "6379"
+    restart: always
+  celery-beat:
+    container_name: sh_celery_beat_d
+    build:
+      context: .
+    command: celery -A django_celery beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+  celery-worker:
+    container_name: sh_celery_worker_d
+    build:
+      context: .
+    command: celery -A django_celery worker --loglevel=INFO
+
+  
